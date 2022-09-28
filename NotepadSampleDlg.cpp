@@ -33,6 +33,8 @@ BEGIN_MESSAGE_MAP(CNotepadSampleDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_OPEN_BTN, &CNotepadSampleDlg::OnBnClickedOpenBtn)
 	ON_BN_CLICKED(IDC_SAVE_BTN, &CNotepadSampleDlg::OnBnClickedSaveBtn)
+	ON_BN_CLICKED(IDOK, &CNotepadSampleDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDCANCEL, &CNotepadSampleDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
 
@@ -110,7 +112,7 @@ void CNotepadSampleDlg::OnBnClickedOpenBtn()
 
 			while (fgets(temp_str, 1024, p_file) != NULL) // fgets -> 한줄씩 읽다가 공백 나오면 NULL 반환
 			{
-				length = MultiByteToWideChar(CP_UTF8, 0, temp_str, -1, NULL, 0);
+				length = MultiByteToWideChar(CP_UTF8, 0, temp_str, -1, NULL, 0); 
 				MultiByteToWideChar(CP_UTF8, 0, temp_str, -1, unicode_str, length); // UTF-8 -> Unicode
 				str += unicode_str;
 			}
@@ -125,5 +127,46 @@ void CNotepadSampleDlg::OnBnClickedOpenBtn()
 
 void CNotepadSampleDlg::OnBnClickedSaveBtn()
 {
+	wchar_t name_filter[] = L"모든 파일 (*.*)|*.*|C++ 파일 (*.cpp)|*.cpp|Header 파일 (*.h)|*.h|텍스트 파일 (*.txt)|*.txt||";
+	CFileDialog ins_dlg(FALSE, L"cpp", L"*.cpp", OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT, name_filter);
+	ins_dlg.m_ofn.nFilterIndex = 2;
+
+	if (IDOK == ins_dlg.DoModal())
+	{
+		SetDlgItemText(IDC_PATH_EDIT, ins_dlg.GetPathName());
+
+		FILE* p_file = NULL;
+		CString str; 
+		if (0 == _wfopen_s(&p_file, ins_dlg.GetPathName(), L"wt"))
+		{
+			GetDlgItemText(IDC_NOTE_EDIT, str);
+			str.Replace(L"\r\n", L"\n");
+
+			// Unicode -> UTF-8
+			int length = WideCharToMultiByte(CP_ACP, 0, str, -1, NULL, 0, NULL, NULL);
+			char* p = new char[length];
+			WideCharToMultiByte(CP_ACP, 0, str, -1, p, length, NULL, NULL);
+			fwrite(p, length, 1, p_file);
+			delete[] p;
+
+
+			fclose(p_file);
+		}
+	}
+}
+
+
+void CNotepadSampleDlg::OnBnClickedOk()
+{
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	//CDialogEx::OnOK();
+}
+
+
+void CNotepadSampleDlg::OnBnClickedCancel()
+{
+	if (IDOK == MessageBox(L"프로그램을 종료하시겠습니까?", L"종료 확인", MB_OKCANCEL | MB_ICONQUESTION))
+	{
+		CDialogEx::OnCancel();
+	}
 }
